@@ -10,6 +10,6 @@
 /generator/kinematics/rooTracker/input input_file.gtrac.root
 /generator/position/set free
 /generator/time/set fixed
-/generator/count/mean/number 10
-/generator/count/set mean
+/generator/count/fixed/number 1
+/generator/count/set fixed
 /generator/add
