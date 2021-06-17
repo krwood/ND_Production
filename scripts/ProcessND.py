@@ -63,8 +63,7 @@ def run_g4( sh, args ):
     print >> sh, "gntpc -i input_file.ghep.root -f rootracker --event-record-print-level 0 --message-thresholds Messenger_production.xml"
 
     # Get edep-sim
-    print >> sh, "ifdh cp %s/edep-sim.tar.gz edep-sim.tar.gz" % args.tardir
-    print >> sh, "tar -xzf edep-sim.tar.gz"
+    print >> sh, "setup edepsim v3_0_1 -q e20:prof"
 
     # Get the macro
     print >> sh, "cp geant4/dune-nd.mac ."
@@ -83,8 +82,8 @@ def run_g4( sh, args ):
         print >> sh, "NSPILL=$(echo \"std::cout << gtree->GetEntries() << std::endl;\" | genie -l -b input_file.ghep.root 2>/dev/null  | tail -1)"
 
     # Put edep-sim in the path
-    print >> sh, "export LD_LIBRARY_PATH=${PWD}/edep-sim/edep-gcc-6.4.0-x86_64-pc-linux-gnu/lib:${LD_LIBRARY_PATH}"
-    print >> sh, "export PATH=${PWD}/edep-sim/edep-gcc-6.4.0-x86_64-pc-linux-gnu/bin:${PATH}"
+    #print >> sh, "export LD_LIBRARY_PATH=${PWD}/edep-sim/edep-gcc-6.4.0-x86_64-pc-linux-gnu/lib:${LD_LIBRARY_PATH}"
+    #print >> sh, "export PATH=${PWD}/edep-sim/edep-gcc-6.4.0-x86_64-pc-linux-gnu/bin:${PATH}"
 
     #Run it
     print >> sh, "edep-sim -C \\"
@@ -119,17 +118,21 @@ def run_larcv( sh, args ):
     print >> sh, "supera_dir=${LARCV_BASEDIR}/larcv/app/Supera"
     print >> sh, "python ${supera_dir}/run_supera.py reco/larcv.cfg %s.${RUN}.edep.root" % mode
 
+
 if __name__ == "__main__":
 
     user = os.getenv("USER")
 
     # Make a bash script to run on the grid
+    # Start with the template with functions used for all jobs
+    template = open("template.sh","r").readlines()
     sh = open( "script.sh", "w" )
-    print >> sh, "#! /usr/bin/env bash"
+    sh.writelines(template)
 
     parser = OptionParser()
 
     parser.add_option('--horn', help='FHC or RHC', default="FHC")
+    parser.add_option('--horn_current', help='horn current (default is 300 for FHC, -300 for RHC', type = "float", default=None)
     parser.add_option('--geometry', help='Geometry file', default="nd_hall_lar_tms")
     parser.add_option('--topvol', help='Top volume for generating events (gen stage only)', default="volWorld")
     parser.add_option('--pot', help='POT per job', type = "float", default=1.e16)
@@ -145,26 +148,21 @@ if __name__ == "__main__":
     parser.add_option('--fluxdir', help='Specify the top-level flux file directory', default="/pnfs/dune/scratch/users/%s/flux"%user)
     parser.add_option('--outdir', help='Top-level output directory', default="/pnfs/dune/persistent/users/%s/nd_production"%user)
     parser.add_option('--use_dk2nu', help='Use full dk2nu flux input (default is gsimple)', action="store_true", default=False)
+    parser.add_option('--sam_name', help='Make a sam dataset with this name', default=None)
 
     (args, dummy) = parser.parse_args()
 
     mode = "neutrino" if args.horn == "FHC" else "antineutrino"
+    hc = 300.
+    if args.horn == "RHC":
+        hc = -300.
+    if args.horn_current is not None:
+        hc = args.horn_current
+    fluxid = 2
+    if args.use_dk2nu:
+        fluxid = 1
 
-    # Some common stuff for any job stages
-    # ifdh mkdir
-    print >> sh, "ifdh_mkdir_p() {"
-    print >> sh, "    local dir=$1"
-    print >> sh, "    local force=$2"
-    print >> sh, "    if [ `ifdh ls $dir 0 $force | wc -l` -gt 0 ] "
-    print >> sh, "    then"
-    print >> sh, "        : # we're done"
-    print >> sh, "    else"
-    print >> sh, "        ifdh_mkdir_p `dirname $dir` $force"
-    print >> sh, "        ifdh mkdir $dir $force"
-    print >> sh, "    fi"
-    print >> sh, "}"
-
-    # Software setup
+    # Software setup -- eventually we may want options for this
     print >> sh, "source /cvmfs/dune.opensciencegrid.org/products/dune/setup_dune.sh"
     print >> sh, "setup ifdhc"
     print >> sh, "setup dk2nugenie   v01_06_01f -q debug:e15"
@@ -208,16 +206,22 @@ if __name__ == "__main__":
     # Generator/GENIE stage
     if any(x in stages for x in ["gen", "genie", "generator"]):
         run_gen( sh, args )
+        if args.sam_name is not None:
+            copylines.append( "generate_sam_json %s.${RUN}.ghep.root ${NSPILL} \"generated\" %s %1.2f %s %s %1.1f %d\n" % (mode, args.sam_name, args.oa, args.geometry, args.topvol, hc, fluxid) )
         if args.persist == "all" or any(x in args.persist for x in ["gen", "genie", "generator"]):
             copylines.append( "ifdh_mkdir_p %s/genie/%s/%02.0fm/${RDIR}\n" % (args.outdir, args.horn, args.oa) )
             copylines.append( "ifdh cp %s.${RUN}.ghep.root %s/genie/%s/%02.0fm/${RDIR}/%s.${RUN}.ghep.root\n" % (mode, args.outdir, args.horn, args.oa, mode) )
 
+    # G4/edep-sim stage
     if any(x in stages for x in ["g4", "geant4", "edepsim", "edep-sim"]):
         run_g4( sh, args )
+        if args.sam_name is not None:
+            copylines.append( "generate_sam_json %s.${RUN}.edep.root ${NSPILL} \"simulated\" %s %1.2f %s %s %1.1f %d\n" % (mode, args.sam_name, args.oa, args.geometry, args.topvol, hc, fluxid) )
         if args.persist == "all" or any(x in args.persist for x in ["g4", "geant4", "edepsim", "edep-sim"]):
             copylines.append( "ifdh_mkdir_p %s/edep/%s/%02.0fm/${RDIR}\n" % (args.outdir, args.horn, args.oa) )
             copylines.append( "ifdh cp %s.${RUN}.edep.root %s/edep/%s/%02.0fm/${RDIR}/%s.${RUN}.edep.root\n" % (mode, args.outdir, args.horn, args.oa, mode) )
 
+    # LarCV stage
     if any(x in stages for x in ["larcv"]):
         run_larcv( sh, args )
         if args.persist == "all" or any(x in args.persist for x in ["larcv"]):
