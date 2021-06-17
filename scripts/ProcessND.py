@@ -6,14 +6,14 @@ import sys
 def run_gen( sh, args ):
     # Get the generator stage inputs that are needed
     print >> sh, "mv generator/GNuMIFlux.xml ."
-    print >> sh, "mv generator/copy_dune_ndtf_flux ."
+    print >> sh, "mv generator/copy_dune_flux ."
     print >> sh, "mv generator/Messenger_production.xml ."
     print >> sh, "mv geometries/%s.gdml ." % args.geometry
 
     mode = "neutrino" if args.horn == "FHC" else "antineutrino"
     fluxopt = "--dk2nu" if args.use_dk2nu else ""
-    print >> sh, "chmod +x copy_dune_ndtf_flux"
-    print >> sh, "./copy_dune_ndtf_flux --top %s --outpath local_flux_files --flavor %s --base June2021 --maxmb=300 %s" % (args.fluxdir, mode, fluxopt)
+    print >> sh, "chmod +x copy_dune_flux"
+    print >> sh, "./copy_dune_flux --top %s --flavor %s --maxmb=300 %s" % (args.fluxdir, mode, fluxopt)
 
     if args.use_dk2nu:  
         # GENIE for some reason doesn't recognize *.dk2nu.root as dk2nu format, but it works if dk2nu is at the front?
@@ -81,10 +81,6 @@ def run_g4( sh, args ):
     else:
         print >> sh, "NSPILL=$(echo \"std::cout << gtree->GetEntries() << std::endl;\" | genie -l -b input_file.ghep.root 2>/dev/null  | tail -1)"
 
-    # Put edep-sim in the path
-    #print >> sh, "export LD_LIBRARY_PATH=${PWD}/edep-sim/edep-gcc-6.4.0-x86_64-pc-linux-gnu/lib:${LD_LIBRARY_PATH}"
-    #print >> sh, "export PATH=${PWD}/edep-sim/edep-gcc-6.4.0-x86_64-pc-linux-gnu/bin:${PATH}"
-
     #Run it
     print >> sh, "edep-sim -C \\"
     print >> sh, "  -g %s.gdml \\" % args.geometry
@@ -98,12 +94,11 @@ def run_larcv( sh, args ):
 
     # Get the input file, unless we just ran edep-sim and it's sitting in the working directory
     if not any(x in stages for x in ["g4", "geant4", "edepsim", "edep-sim"]):
-        print >> sh, "ifdh cp %s/edep-sim.tar.gz edep-sim.tar.gz" % args.tardir
-        print >> sh, "tar -xzf edep-sim.tar.gz"
+        print >> sh, "setup edepsim v3_0_1 -q e20:prof"
         print >> sh, "ifdh %s/edep/%s/%02.0fm/${RDIR}/%s.${RUN}.edep.root %s.${RUN}.edep.root" % (args.indir, args.horn, args.oa, mode, mode)
 
     # Setup edep-sim
-    print >> sh, "pushd edep-sim;source setup.sh;popd"
+    #print >> sh, "pushd edep-sim;source setup.sh;popd"
 
     # Get larcv stuff
     print >> sh, "ifdh cp %s/larcv2.tar.bz2 larcv2.tar.bz2" % args.tardir
@@ -145,7 +140,7 @@ if __name__ == "__main__":
     parser.add_option('--persist', help='Production stages to save to disk(gen+g4+larcv+ana)', default="all")
     parser.add_option('--indir', help='Input file top-directory (if not running gen)', default="/pnfs/dune/persistent/users/%s/nd_production"%user)
     parser.add_option('--tardir', help='Specify a directory where the executables live', default=None)
-    parser.add_option('--fluxdir', help='Specify the top-level flux file directory', default="/pnfs/dune/scratch/users/%s/flux"%user)
+    parser.add_option('--fluxdir', help='Specify the top-level flux file directory', default="/cvmfs/dune.osgstorage.org/pnfs/fnal.gov/usr/dune/persistent/stash/Flux/g4lbne/v3r5p4/QGSP_BERT/OptimizedEngineeredNov2017")
     parser.add_option('--outdir', help='Top-level output directory', default="/pnfs/dune/persistent/users/%s/nd_production"%user)
     parser.add_option('--use_dk2nu', help='Use full dk2nu flux input (default is gsimple)', action="store_true", default=False)
     parser.add_option('--sam_name', help='Make a sam dataset with this name', default=None)
