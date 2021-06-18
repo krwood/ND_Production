@@ -91,15 +91,29 @@ ifdh lss ${REMOTEFLUXPATH} > ${LISTFILELOCAL}
 nlines=`wc -l $LISTFILELOCAL | cut -d' ' -f1`
 echo "${b0}: Found $nlines flux files"
 
+export MATCHLIST=${LISTFILELOCAL}.match
+if [ -f $MATCHLIST ]; then rm $MATCHLIST; fi
+touch $MATCHLIST
+
+set -o noglob   # no wildcard expansion
+# egrep needs regex rather than glob, this does need trailing "$"
+#  * ==> .*
+# ranges stay the same
+# trailing $ to match end-of-line so we don't pick up blah.root.log
+# or require white space following end of the pattern
+regexpattern=`echo "*.root(\$|[[:space:]])" | sed -e 's/\*/\.\*/g' -e 's/\?/\./g'`
+egrep "${regexpattern}" $LISTFILELOCAL >> $MATCHLIST
+set +o noglob  # restore expansion
+
 # okay ... have a list of matches ... now to shuffle it up
-export SHUFFLELIST=${LISTFILELOCAL}.shuffle
+export SHUFFLELIST=${MATCHLIST}.shuffle
 if [ -f $SHUFFLELIST ]; then rm $SHUFFLELIST; fi
 touch $SHUFFLELIST
 
 # we'll use the "shuf" command to mix things up
 # this _should_ be installed by default as part of the core tools
 # (like cut and sort, etc...)
-shuf -o $SHUFFLELIST $LISTFILELOCAL
+shuf -o $SHUFFLELIST $MATCHLIST
 
 SUMMB=0
 NFILES=0
