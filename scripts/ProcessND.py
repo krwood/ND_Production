@@ -121,7 +121,7 @@ if __name__ == "__main__":
     # Make a bash script to run on the grid
     # Start with the template with functions used for all jobs
     template = open("template.sh","r").readlines()
-    sh = open( "script.sh", "w" )
+    sh = open( "processnd.sh", "w" )
     sh.writelines(template)
 
     parser = OptionParser()
@@ -212,27 +212,27 @@ if __name__ == "__main__":
         run_gen( sh, args )
         if args.sam_name is not None:
             # generate a unique file name with the timestamp
-            copylines.append( "GHEP_FILE=%s.${RUN}_${TIMESTAMP}.ghep.root" % mode )
-            copylines.append( "mv %s.${RUN}.ghep.root ${GHEP_FILE}" % mode )
+            copylines.append( "GHEP_FILE=%s.${RUN}_${TIMESTAMP}.ghep.root\n" % mode )
+            copylines.append( "mv %s.${RUN}.ghep.root ${GHEP_FILE}\n" % mode )
             copylines.append( "generate_sam_json ${GHEP_FILE} ${RUN} ${NSPILL} \"generated\" %s %1.2f %s %s %1.1f %d\n" % (args.sam_name, args.oa, args.geometry, args.topvol, hc, fluxid) )
-            copylines.append( "ifdh cp ${GHEP_FILE} %s" % args.dropbox_dir )
-            copylines.append( "ifdh cp ${GHEP_FILE}.json %s" % args.dropbox_dir )
+            copylines.append( "ifdh cp ${GHEP_FILE} %s/${GHEP_FILE}\n" % args.dropbox_dir )
+            copylines.append( "ifdh cp ${GHEP_FILE}.json %s/${GHEP_FILE}.json\n" % args.dropbox_dir )
         if args.persist == "all" or any(x in args.persist for x in ["gen", "genie", "generator"]):
             copylines.append( "ifdh_mkdir_p %s/genie/%s/%02.0fm/${RDIR}\n" % (args.outdir, args.horn, args.oa) )
-            copylines.append( "ifdh cp ${GHEP_FILE} %s/genie/%s/%02.0fm/${RDIR}/%s.${RUN}.ghep.root\n" % (args.outdir, args.horn, args.oa, mode) )
+            copylines.append( "ifdh cp ${GHEP_FILE} %s/genie/%s/%02.0fm/${RDIR}/${GHEP_FILE}\n" % (args.outdir, args.horn, args.oa) )
 
     # G4/edep-sim stage
     if any(x in stages for x in ["g4", "geant4", "edepsim", "edep-sim"]):
         run_g4( sh, args )
         if args.sam_name is not None:
-            copylines.append( "EDEP_FILE=%s.${RUN}_${TIMESTAMP}.edep.root" % mode )
-            copylines.append( "mv %s.${RUN}.edep.root ${EDEP_FILE}" % mode )
+            copylines.append( "EDEP_FILE=%s.${RUN}_${TIMESTAMP}.edep.root\n" % mode )
+            copylines.append( "mv %s.${RUN}.edep.root ${EDEP_FILE}\n" % mode )
             copylines.append( "generate_sam_json ${EDEP_FILE} ${RUN} ${NSPILL} \"simulated\" %s %1.2f %s %s %1.1f %d\n" % (args.sam_name, args.oa, args.geometry, args.topvol, hc, fluxid) )
-            copylines.append( "ifdh cp ${EDEP_FILE} %s" % args.dropbox_dir )
-            copylines.append( "ifdh cp ${EDEP_FILE}.json %s" % args.dropbox_dir )
+            copylines.append( "ifdh cp ${EDEP_FILE} %s/${EDEP_FILE}\n" % args.dropbox_dir )
+            copylines.append( "ifdh cp ${EDEP_FILE}.json %s/${EDEP_FILE}.json\n" % args.dropbox_dir )
         if args.persist == "all" or any(x in args.persist for x in ["g4", "geant4", "edepsim", "edep-sim"]):
             copylines.append( "ifdh_mkdir_p %s/edep/%s/%02.0fm/${RDIR}\n" % (args.outdir, args.horn, args.oa) )
-            copylines.append( "ifdh cp ${EDEP_FILE} %s/edep/%s/%02.0fm/${RDIR}/%s.${RUN}.edep.root\n" % (args.outdir, args.horn, args.oa, mode) )
+            copylines.append( "ifdh cp ${EDEP_FILE} %s/edep/%s/%02.0fm/${RDIR}/${EDEP_FILE}\n" % (args.outdir, args.horn, args.oa) )
 
     # LarCV stage
     if any(x in stages for x in ["larcv"]):
@@ -242,4 +242,8 @@ if __name__ == "__main__":
             copylines.append( "ifdh cp larcv.root %s/larcv/%s/%02.0fm/${RDIR}/%s.${RUN}.larcv.root\n" % (args.outdir, args.horn, args.oa, mode) )
 
     sh.writelines(copylines)
+
+    if not args.test:
+        print "Script processnd.sh created. Submit example:\n"
+        print "jobsub_submit --group dune --role=Analysis -N 1000 --OS=SL7 --expected-lifetime=24h --memory=2000MB file://processnd.sh"
 
