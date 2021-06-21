@@ -13,7 +13,7 @@ def run_gen( sh, args ):
     mode = "neutrino" if args.horn == "FHC" else "antineutrino"
     fluxopt = "--dk2nu" if args.use_dk2nu else ""
     print >> sh, "chmod +x copy_dune_flux"
-    print >> sh, "./copy_dune_flux --top %s --flavor %s --maxmb=300 %s" % (args.fluxdir, mode, fluxopt)
+    print >> sh, "./copy_dune_flux --top %s --flavor %s --maxmb=100 %s" % (args.fluxdir, mode, fluxopt)
 
     if args.use_dk2nu:  
         # GENIE for some reason doesn't recognize *.dk2nu.root as dk2nu format, but it works if dk2nu is at the front?
@@ -144,6 +144,7 @@ if __name__ == "__main__":
     parser.add_option('--outdir', help='Top-level output directory', default="/pnfs/dune/persistent/users/%s/nd_production"%user)
     parser.add_option('--use_dk2nu', help='Use full dk2nu flux input (default is gsimple)', action="store_true", default=False)
     parser.add_option('--sam_name', help='Make a sam dataset with this name', default=None)
+    parser.add_option('--dropbox_dir', help='dropbox directory', default="/pnfs/dune/scratch/dunepro/dropbox/neardet")
 
     (args, dummy) = parser.parse_args()
 
@@ -164,6 +165,11 @@ if __name__ == "__main__":
     print >> sh, "setup genie_xsec   v2_12_10   -q DefaultPlusValenciaMEC"
     print >> sh, "setup genie_phyopt v2_12_10   -q dkcharmtau"
     print >> sh, "setup geant4 v4_10_3_p01b -q e15:prof"
+    # If we are going to do a sam metadata, set it up
+    if args.sam_name is not None:
+        print >> sh, "setup duneutil v06_85_00 -q e15:prof"
+        #print >> sh, "setup_fnal_security"
+
 
     # edep-sim needs to know the location of this file, and also needs to have this location in its path
     print >> sh, "G4_cmake_file=`find ${GEANT4_FQ_DIR}/lib64 -name 'Geant4Config.cmake'`"
@@ -198,23 +204,35 @@ if __name__ == "__main__":
     stages = (args.stages).lower()
     copylines = []
 
+    # put the timestamp for unique file names
+    print >> sh, "TIMESTAMP=`date +%s`"
+
     # Generator/GENIE stage
     if any(x in stages for x in ["gen", "genie", "generator"]):
         run_gen( sh, args )
         if args.sam_name is not None:
-            copylines.append( "generate_sam_json %s.${RUN}.ghep.root ${NSPILL} \"generated\" %s %1.2f %s %s %1.1f %d\n" % (mode, args.sam_name, args.oa, args.geometry, args.topvol, hc, fluxid) )
+            # generate a unique file name with the timestamp
+            copylines.append( "GHEP_FILE=%s.${RUN}_${TIMESTAMP}.ghep.root" % mode )
+            copylines.append( "mv %s.${RUN}.ghep.root ${GHEP_FILE}" % mode )
+            copylines.append( "generate_sam_json ${GHEP_FILE} ${RUN} ${NSPILL} \"generated\" %s %1.2f %s %s %1.1f %d\n" % (args.sam_name, args.oa, args.geometry, args.topvol, hc, fluxid) )
+            copylines.append( "ifdh cp ${GHEP_FILE} %s" % args.dropbox_dir
+            copylines.append( "ifdh cp ${GHEP_FILE}.json %s" % args.dropbox_dir
         if args.persist == "all" or any(x in args.persist for x in ["gen", "genie", "generator"]):
             copylines.append( "ifdh_mkdir_p %s/genie/%s/%02.0fm/${RDIR}\n" % (args.outdir, args.horn, args.oa) )
-            copylines.append( "ifdh cp %s.${RUN}.ghep.root %s/genie/%s/%02.0fm/${RDIR}/%s.${RUN}.ghep.root\n" % (mode, args.outdir, args.horn, args.oa, mode) )
+            copylines.append( "ifdh cp ${GHEP_FILE} %s/genie/%s/%02.0fm/${RDIR}/%s.${RUN}.ghep.root\n" % (args.outdir, args.horn, args.oa, mode) )
 
     # G4/edep-sim stage
     if any(x in stages for x in ["g4", "geant4", "edepsim", "edep-sim"]):
         run_g4( sh, args )
         if args.sam_name is not None:
-            copylines.append( "generate_sam_json %s.${RUN}.edep.root ${NSPILL} \"simulated\" %s %1.2f %s %s %1.1f %d\n" % (mode, args.sam_name, args.oa, args.geometry, args.topvol, hc, fluxid) )
+            copylines.append( "EDEP_FILE=%s.${RUN}_${TIMESTAMP}.edep.root" % mode )
+            copylines.append( "mv %s.${RUN}.edep.root ${EDEP_FILE}" % mode )
+            copylines.append( "generate_sam_json ${EDEP_FILE} ${RUN} ${NSPILL} \"simulated\" %s %1.2f %s %s %1.1f %d\n" % (args.sam_name, args.oa, args.geometry, args.topvol, hc, fluxid) )
+            copylines.append( "ifdh cp ${EDEP_FILE} %s" % args.dropbox_dir
+            copylines.append( "ifdh cp ${EDEP_FILE}.json %s" % args.dropbox_dir
         if args.persist == "all" or any(x in args.persist for x in ["g4", "geant4", "edepsim", "edep-sim"]):
             copylines.append( "ifdh_mkdir_p %s/edep/%s/%02.0fm/${RDIR}\n" % (args.outdir, args.horn, args.oa) )
-            copylines.append( "ifdh cp %s.${RUN}.edep.root %s/edep/%s/%02.0fm/${RDIR}/%s.${RUN}.edep.root\n" % (mode, args.outdir, args.horn, args.oa, mode) )
+            copylines.append( "ifdh cp ${EDEP_FILE} %s/edep/%s/%02.0fm/${RDIR}/%s.${RUN}.edep.root\n" % (args.outdir, args.horn, args.oa, mode) )
 
     # LarCV stage
     if any(x in stages for x in ["larcv"]):
