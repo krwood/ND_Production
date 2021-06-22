@@ -161,14 +161,13 @@ if __name__ == "__main__":
     # Software setup -- eventually we may want options for this
     print >> sh, "source /cvmfs/dune.opensciencegrid.org/products/dune/setup_dune.sh"
     print >> sh, "setup ifdhc"
-    print >> sh, "setup dk2nugenie   v01_06_01f -q debug:e15"
+    print >> sh, "setup dk2nugenie   v01_06_01f -q e17:prof"
     print >> sh, "setup genie_xsec   v2_12_10   -q DefaultPlusValenciaMEC"
     print >> sh, "setup genie_phyopt v2_12_10   -q dkcharmtau"
-    print >> sh, "setup geant4 v4_10_3_p01b -q e15:prof"
+    print >> sh, "setup geant4 v4_10_3_p01e -q e17:prof"
     # If we are going to do a sam metadata, set it up
     if args.sam_name is not None:
-        print >> sh, "setup duneutil v06_85_00 -q e15:prof"
-        #print >> sh, "setup_fnal_security"
+        print >> sh, "setup duneutil v08_38_00 -q e17:prof"
 
 
     # edep-sim needs to know the location of this file, and also needs to have this location in its path
