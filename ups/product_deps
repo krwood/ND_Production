@@ -23,10 +23,9 @@ defaultqual e15:prof
 # gdmldir -  
 # fwdir   -  
 #
-incdir  -
-fcldir  -
-libdir  -
-bindir  product_dir    bin
+bindir   product_dir    bin
+gdmldir  product_dir    gdml
+fwdir    product_dir    config_data
 
 # table fragment to set various environment variables.
 table_fragment_begin
