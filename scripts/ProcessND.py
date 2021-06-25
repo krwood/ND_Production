@@ -63,7 +63,7 @@ def run_g4( sh, args ):
     print >> sh, "gntpc -i input_file.ghep.root -f rootracker --event-record-print-level 0 --message-thresholds Messenger_production.xml"
 
     # Get edep-sim
-    print >> sh, "setup edepsim v3_0_1 -q e20:prof"
+    print >> sh, "setup edepsim v2_0_1 -q e17:prof"
 
     # Get the macro
     print >> sh, "cp geant4/dune-nd.mac ."
@@ -94,7 +94,7 @@ def run_larcv( sh, args ):
 
     # Get the input file, unless we just ran edep-sim and it's sitting in the working directory
     if not any(x in stages for x in ["g4", "geant4", "edepsim", "edep-sim"]):
-        print >> sh, "setup edepsim v3_0_1 -q e20:prof"
+        print >> sh, "setup edepsim v2_0_1 -q e17:prof"
         print >> sh, "ifdh %s/edep/%s/%02.0fm/${RDIR}/%s.${RUN}.edep.root %s.${RUN}.edep.root" % (args.indir, args.horn, args.oa, mode, mode)
 
     # Setup edep-sim
@@ -164,7 +164,7 @@ if __name__ == "__main__":
     print >> sh, "setup dk2nugenie   v01_06_01f -q e17:prof"
     print >> sh, "setup genie_xsec   v2_12_10   -q DefaultPlusValenciaMEC"
     print >> sh, "setup genie_phyopt v2_12_10   -q dkcharmtau"
-    print >> sh, "setup geant4 v4_10_3_p01e -q e17:prof"
+    print >> sh, "setup geant4 v4_10_3_p03e -q e17:prof"
     # If we are going to do a sam metadata, set it up
     if args.sam_name is not None:
         print >> sh, "setup duneutil v08_38_00 -q e17:prof"
@@ -209,10 +209,11 @@ if __name__ == "__main__":
     # Generator/GENIE stage
     if any(x in stages for x in ["gen", "genie", "generator"]):
         run_gen( sh, args )
+        copylines.append( "GHEP_FILE=%s.${RUN}_${TIMESTAMP}.ghep.root\n" % mode )
+        copylines.append( "mv %s.${RUN}.ghep.root ${GHEP_FILE}\n" % mode )
+
         if args.sam_name is not None:
             # generate a unique file name with the timestamp
-            copylines.append( "GHEP_FILE=%s.${RUN}_${TIMESTAMP}.ghep.root\n" % mode )
-            copylines.append( "mv %s.${RUN}.ghep.root ${GHEP_FILE}\n" % mode )
             copylines.append( "generate_sam_json ${GHEP_FILE} ${RUN} ${NSPILL} \"generated\" %s %1.2f %s %s %1.1f %d\n" % (args.sam_name, args.oa, args.geometry, args.topvol, hc, fluxid) )
             copylines.append( "ifdh cp ${GHEP_FILE} %s/${GHEP_FILE}\n" % args.dropbox_dir )
             copylines.append( "ifdh cp ${GHEP_FILE}.json %s/${GHEP_FILE}.json\n" % args.dropbox_dir )
@@ -223,9 +224,10 @@ if __name__ == "__main__":
     # G4/edep-sim stage
     if any(x in stages for x in ["g4", "geant4", "edepsim", "edep-sim"]):
         run_g4( sh, args )
+        copylines.append( "EDEP_FILE=%s.${RUN}_${TIMESTAMP}.edep.root\n" % mode )
+        copylines.append( "mv %s.${RUN}.edep.root ${EDEP_FILE}\n" % mode )
+
         if args.sam_name is not None:
-            copylines.append( "EDEP_FILE=%s.${RUN}_${TIMESTAMP}.edep.root\n" % mode )
-            copylines.append( "mv %s.${RUN}.edep.root ${EDEP_FILE}\n" % mode )
             copylines.append( "generate_sam_json ${EDEP_FILE} ${RUN} ${NSPILL} \"simulated\" %s %1.2f %s %s %1.1f %d\n" % (args.sam_name, args.oa, args.geometry, args.topvol, hc, fluxid) )
             copylines.append( "ifdh cp ${EDEP_FILE} %s/${EDEP_FILE}\n" % args.dropbox_dir )
             copylines.append( "ifdh cp ${EDEP_FILE}.json %s/${EDEP_FILE}.json\n" % args.dropbox_dir )
