@@ -2,8 +2,8 @@
 
 # The *parent* line must the first non-commented line and defines this product and version
 # The version should be of the form vxx_yy_zz (e.g. v01_02_03)
-parent ND_Production v01_00_00
-defaultqual e15:prof
+parent ND_Production v01_01_00
+defaultqual e17:prof
 
 # These optional lines define the installed directories where headers,
 # libraries, and executables will be found.
@@ -33,6 +33,8 @@ table_fragment_begin
     envSet(EXPERIMENT, dune)
     envSet(SAM_EXPERIMENT, dune)
     pathPrepend(PYTHONPATH, ${UPS_PROD_DIR}/python)
+    envSet(ND_PRODUCTION_GDML, ${UPS_PROD_DIR}/gdml)
+    envSet(ND_PRODUCTION_CONFIG, ${UPS_PROD_DIR}/config_data)
 table_fragment_end
 
 # With "product  version" table below, we now define depdendencies
@@ -54,12 +56,12 @@ end_product_list
 # We now define allowed qualifiers and the corresponding qualifiers for the depdencies.
 # Make a table by adding columns before "notes". 
 #qualifier   jobsub_client  ifdhc  dk2nugenie  genie_xsec              geant4       notes
-#e15:prof      -nq-         -nq-   e15:debug   DefaultPlusValenciaMEC  e15:debug
-#e15:debug     -nq-	   -nq-   e15:debug   DefaultPlusValenciaMEC  e15:prof
+#e17:prof      -nq-         -nq-   e17:debug   DefaultPlusValenciaMEC  e17:debug
+#e17:debug     -nq-	   -nq-   e17:debug   DefaultPlusValenciaMEC  e17:prof
 
 qualifier   jobsub_client     notes
-e15:prof      -nq-         
-e15:debug     -nq-	   
+e17:prof      -nq-         
+e17:debug     -nq-	   
 
 end_qualifier_list
 
