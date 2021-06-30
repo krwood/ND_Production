@@ -33,6 +33,8 @@ table_fragment_begin
     envSet(EXPERIMENT, dune)
     envSet(SAM_EXPERIMENT, dune)
     pathPrepend(PYTHONPATH, ${UPS_PROD_DIR}/python)
+    envSet(ND_PRODUCTION_GDML, ${UPS_PROD_DIR}/gdml)
+    envSet(ND_PRODUCTION_CONFIG, ${UPS_PROD_DIR}/config_data)
 table_fragment_end
 
 # With "product  version" table below, we now define depdendencies
