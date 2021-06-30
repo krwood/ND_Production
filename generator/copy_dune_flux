@@ -7,7 +7,7 @@ sargs="$@"
 
 
 DOCOPY=true
-FLUXDIR="local_flux_files"
+FLUXDIR="flux_files"
 USEDK2NU=false
 FLAVOR="neutrino"
 MAXSIZEMB=2000
@@ -20,9 +20,9 @@ FLXFILE_SEARCH_PATH=${DEFAULT_SEARCH_PATH}
 usage() {
 cat >&2 <<EOF
 
-${b0} [--dk2nu] [ -o local_flux_files ] -f neutrino  [ --max 2000 ]  
+${b0} [--dk2nu] [ -o flux_files ] -f neutrino  [ --max 2000 ]  
 
-Create a subdirectory <local_flux_files> and populate it with the DUNE flux 
+Create a subdirectory <flux_files> and populate it with symlinks to the DUNE flux 
 files from: ${DEFAULT_SEARCH_PATH}
 Limit selection to the the space consideration that the "MaxFluxFileMB" 
 parameter would impose if it were being done internally to nutools/GENIEHelper.
@@ -36,7 +36,7 @@ Assumes DUNE release is already setup (and that "ifdh" commands are available)
    --dk2nu                       override default 'gsimple' assumption
    -f | --flavor    neutrino|antineutrino|nu|anu
                                  [${FLAVOR}]
-   -t | --test                   test mode: do all but actual copy of files
+   -t | --test                   test mode: do all but actually create links
    --top                         stem of search path for files
                                  [${FLXFILE_SEARCH_PATH}]
 
@@ -130,17 +130,21 @@ while read line ; do
     echo "${b0}: file # $NFILES would exceed MAXSIZEMB limit $MAXSIZEMB (now ${SUMMB}, would be ${summbtest})"
     break;
   fi
-  
+
+  # Make a symbolic link to the file in cvmfs
   bname=`basename $fname`
-  if [ "$DOCOPY" == "true" ]; then
-      ifdh cp $fname $FLUXDIR/$bname
-  else
-      echo "$b0 test mode: skip ifdh cp $fname $FLUXDIR/$bname"
+  if [ "$USEDK2NU" == "true" ]; then
+    bname="dk2nu_${bname}"
   fi
+  if [ "$DOCOPY" == "true" ]; then
+      ln -s $fname $FLUXDIR/$bname
+  fi
+
   SUMMB=$summbtest
   let NFILES=NFILES+1
+
 done < $SHUFFLELIST
-echo "copied $NFILES files"
+echo "symlinked $NFILES files"
 
 ###########################################################################
 
