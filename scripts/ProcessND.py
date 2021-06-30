@@ -15,14 +15,14 @@ def run_gen( sh, args ):
     print >> sh, "chmod +x copy_dune_flux"
     print >> sh, "./copy_dune_flux --top %s --flavor %s --maxmb=100 %s" % (args.fluxdir, mode, fluxopt)
 
-    if args.use_dk2nu:  
+    #if args.use_dk2nu:  
         # GENIE for some reason doesn't recognize *.dk2nu.root as dk2nu format, but it works if dk2nu is at the front?
-        print >> sh, "pushd local_flux_files"
-        print >> sh, "for f in *.dk2nu.root"
-        print >> sh, "do"
-        print >> sh, "  mv \"$f\" \"dk2nu_$f\""
-        print >> sh, "done"
-        print >> sh, "popd"
+    #    print >> sh, "pushd local_flux_files"
+    #    print >> sh, "for f in *.dk2nu.root"
+    #    print >> sh, "do"
+    #    print >> sh, "  mv \"$f\" \"dk2nu_$f\""
+    #    print >> sh, "done"
+    #    print >> sh, "popd"
   
     # Modify GNuMIFlux.xml to the specified off-axis position
     print >> sh, "sed -i \"s/<beampos> ( 0.0, 0.05387, 6.66 )/<beampos> ( %1.2f, 0.05387, 6.66 )/g\" GNuMIFlux.xml" % args.oa
@@ -33,7 +33,7 @@ def run_gen( sh, args ):
     # Run GENIE
     flux = "dk2nu" if args.use_dk2nu else "gsimple"
     print >> sh, "gevgen_fnal \\"
-    print >> sh, "    -f local_flux_files/%s*,DUNEND \\" % flux
+    print >> sh, "    -f flux_files/%s*,DUNEND \\" % flux
     print >> sh, "    -g %s.gdml \\" % args.geometry
     print >> sh, "    -t %s \\" % args.topvol
     print >> sh, "    -L cm -D g_cm3 \\"
