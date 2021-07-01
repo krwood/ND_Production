@@ -13,9 +13,8 @@ def run_gen( sh, args ):
         maxmb = 300
     print >> sh, "${ND_PRODUCTION_DIR}/bin/copy_dune_flux --top %s --flavor %s --maxmb=100 %s" % (args.fluxdir, mode, fluxopt)
 
-    # Get GNuMIFlux.xml, modify GNuMIFlux.xml to the specified off-axis position
-    print >> sh, "ifdh cp ${ND_PRODUCTION_CONFIG}/GNuMIFlux.xml GNuMIFlux.xml"
-    print >> sh, "sed -i \"s/<beampos> ( 0.0, 0.05387, 6.66 )/<beampos> ( %1.2f, 0.05387, 6.66 )/g\" GNuMIFlux.xml" % args.oa
+    # Modify GNuMIFlux.xml to the specified off-axis position
+    print >> sh, "sed \"s/<beampos> ( 0.0, 0.05387, 6.66 )/<beampos> ( %1.2f, 0.05387, 6.66 )/g\" ${ND_PRODUCTION_CONFIG}/GNuMIFlux.xml > GNuMIFlux.xml" % args.oa
   
     print >> sh, "export GXMLPATH=${PWD}:${GXMLPATH}"
     print >> sh, "export GNUMIXML=\"GNuMIFlux.xml\""
@@ -65,7 +64,7 @@ def run_g4( sh, args ):
         print >> sh, "NSPILL=$(echo \"std::cout << (int)floor(0.9*gtree->GetEntries()/${MEAN}) << std::endl;\" | genie -l -b input_file.ghep.root 2>/dev/null  | tail -1)"
 
         # change the macro to use mean
-        print >> sh, "sed -i \"s/count\/set fixed/cout\/set mean/g\" dune-nd.mac"
+        print >> sh, "sed \"s/count\/set fixed/cout\/set mean/g\" ${ND_PRODUCTION_CONFIG}/dune-nd.mac > dune-nd.mac"
         print >> sh, "sed -i \"s/count\/fixed\/number 1/count\/mean\/number ${MEAN}/g\" dune-nd.mac"
         
     else:
