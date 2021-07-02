@@ -52,10 +52,7 @@ def run_g4( sh, args ):
     print >> sh, "gntpc -i input_file.ghep.root -f rootracker --event-record-print-level 0 --message-thresholds ${ND_PRODUCTION_CONFIG}/Messenger_production.xml"
 
     # Get edep-sim
-    print >> sh, "setup edepsim v2_0_1 -q e17:prof"
-
-    # Get the macro
-    print >> sh, "ifdh cp ${ND_PRODUCTION_CONFIG}/dune-nd.mac ."
+    print >> sh, "setup edepsim v3_0_1b -q e17:prof"
 
     # Get the number of events in the genie file
     # if we're doing overlay, then we want to get the poisson mean and then the number of spills, and be careful not to overshoot
@@ -64,11 +61,11 @@ def run_g4( sh, args ):
         print >> sh, "NSPILL=$(echo \"std::cout << (int)floor(0.9*gtree->GetEntries()/${MEAN}) << std::endl;\" | genie -l -b input_file.ghep.root 2>/dev/null  | tail -1)"
 
         # change the macro to use mean
-        print >> sh, "sed \"s/count\/set fixed/cout\/set mean/g\" ${ND_PRODUCTION_CONFIG}/dune-nd.mac > dune-nd.mac"
+        print >> sh, "sed \"s/count\/set fixed/cout\/set mean/g\" ${ND_PRODUCTION_CONFIG}/dune-nd.mac > dune-nd.mac" % mac
         print >> sh, "sed -i \"s/count\/fixed\/number 1/count\/mean\/number ${MEAN}/g\" dune-nd.mac"
-        
     else:
         print >> sh, "NSPILL=$(echo \"std::cout << gtree->GetEntries() << std::endl;\" | genie -l -b input_file.ghep.root 2>/dev/null  | tail -1)"
+        print >> sh, "cat ${ND_PRODUCTION_CONFIG}/dune-nd.mac > dune-nd.mac"
 
     #Run it
     print >> sh, "edep-sim -C \\"
@@ -158,7 +155,7 @@ if __name__ == "__main__":
     print >> sh, "setup genie_xsec   v2_12_10   -q DefaultPlusValenciaMEC"
     print >> sh, "setup genie_phyopt v2_12_10   -q dkcharmtau"
     print >> sh, "setup geant4 v4_10_3_p03e -q e17:prof"
-    print >> sh, "setup ND_Production v01_01_00 -q e17:prof"
+    print >> sh, "setup ND_Production v01_02_00 -q e17:prof"
     # If we are going to do a sam metadata, set it up
     if args.sam_name is not None:
         print >> sh, "setup duneutil v08_38_00 -q e17:prof"
