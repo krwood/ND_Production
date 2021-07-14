@@ -156,9 +156,13 @@ if __name__ == "__main__":
     print >> sh, "setup genie_phyopt v2_12_10   -q dkcharmtau"
     print >> sh, "setup geant4 v4_10_3_p03e -q e17:prof"
     print >> sh, "setup ND_Production v01_02_00 -q e17:prof"
+    print >> sh, "setup jobsub_client"
+    print >> sh, "setup cigetcert"
+
+
     # If we are going to do a sam metadata, set it up
     if args.sam_name is not None:
-        print >> sh, "setup duneutil v08_38_00 -q e17:prof"
+        print >> sh, "setup sam_web_client v2_2"
 
 
     # edep-sim needs to know the location of this file, and also needs to have this location in its path
