@@ -130,6 +130,12 @@ if __name__ == "__main__":
     parser.add_option('--use_dk2nu', help='Use full dk2nu flux input (default is gsimple)', action="store_true", default=False)
     parser.add_option('--sam_name', help='Make a sam dataset with this name', default=None)
     parser.add_option('--dropbox_dir', help='dropbox directory', default="/pnfs/dune/scratch/dunepro/dropbox/neardet")
+    parser.add_option('--data_stream', help='data_stream', default=None)
+    parser.add_option('--file_format', help='file format', default=None)
+    parser.add_option('--application_family', help='application family', default=None)
+    parser.add_option('--application_name', help='application name', default=None)
+    parser.add_option('--application_version', help='application version', default=None)
+    parser.add_option('--campaign', help='DUNE.campaign', default=None)
 
     (args, dummy) = parser.parse_args()
 
@@ -200,7 +206,7 @@ if __name__ == "__main__":
 
         if args.sam_name is not None:
             # generate a unique file name with the timestamp
-            copylines.append( "generate_sam_json ${GHEP_FILE} ${RUN} ${NSPILL} \"generated\" %s %1.2f %s %s %1.1f %d\n" % (args.sam_name, args.oa, args.geometry, args.topvol, hc, fluxid) )
+            copylines.append( "generate_sam_json ${GHEP_FILE} ${RUN} ${NSPILL} \"generated\" %s %1.2f %s %s %1.1f %d %s %s %s %s %s %s\n" % (args.sam_name, args.oa, args.geometry, args.topvol, hc, fluxid, args.data_stream, args.file_format, args.application_family, args.application_name, args.application_version, args.campaign) )
             copylines.append( "ifdh cp ${GHEP_FILE} %s/${GHEP_FILE}\n" % args.dropbox_dir )
             copylines.append( "ifdh cp ${GHEP_FILE}.json %s/${GHEP_FILE}.json\n" % args.dropbox_dir )
         if args.persist == "all" or any(x in args.persist for x in ["gen", "genie", "generator"]):
@@ -214,7 +220,7 @@ if __name__ == "__main__":
         copylines.append( "mv %s.${RUN}.edep.root ${EDEP_FILE}\n" % mode )
 
         if args.sam_name is not None:
-            copylines.append( "generate_sam_json ${EDEP_FILE} ${RUN} ${NSPILL} \"simulated\" %s %1.2f %s %s %1.1f %d\n" % (args.sam_name, args.oa, args.geometry, args.topvol, hc, fluxid) )
+            copylines.append( "generate_sam_json ${EDEP_FILE} ${RUN} ${NSPILL} \"simulated\" %s %1.2f %s %s %1.1f %d %s %s %s %s %s %s\n" % (args.sam_name, args.oa, args.geometry, args.topvol, hc, fluxid, args.data_stream, args.file_format, args.application_family, args.application_name, args.application_version, args.campaign) )
             copylines.append( "ifdh cp ${EDEP_FILE} %s/${EDEP_FILE}\n" % args.dropbox_dir )
             copylines.append( "ifdh cp ${EDEP_FILE}.json %s/${EDEP_FILE}.json\n" % args.dropbox_dir )
         if args.persist == "all" or any(x in args.persist for x in ["g4", "geant4", "edepsim", "edep-sim"]):

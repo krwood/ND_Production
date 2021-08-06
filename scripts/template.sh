@@ -51,13 +51,13 @@ generate_sam_json() {
   "DUNE_MC.TopVolume": "$7",
   "DUNE_MC.geometry_version": "$8",
   "LBNF_MC.HornCurrent": $9,
-  "DUNE_MC.beam_flux_ID": ${10}
-
-  "data_stream": "${11}"
-  "file_format": "${12}"
-  "application": "${13}"
-  "DUNE.campaign": "${14}"
-
+  "DUNE_MC.beam_flux_ID": ${10},
+  "data_stream": "${11}",
+  "file_format": "${12}",
+  "application": [
+    "${13}", "${14}", "${15}"
+  ],
+  "DUNE.campaign": "${16}"
 }
 EOF
 
