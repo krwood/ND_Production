@@ -18925,7 +18925,7 @@
       <rotationref ref="identity"/>
     </union>
     <box name="RockBoxMain" lunit="cm" x="6517.0" y="3164.0" z="3055.0"/>
-    <box name="RockBoxUpstream" lunit="cm" x="16917.0" y="13563.999999999998" z="0.0"/>
+    <!--box name="RockBoxUpstream" lunit="cm" x="16917.0" y="13563.999999999998" z="0.0"/-->
     <box name="RockBoxSubt" lunit="cm" x="6517.001" y="1110.01" z="1035.001"/>
     <tube name="rockTub" lunit="cm" aunit="radian" rmin="0.0" rmax="579.0" z="3443.0" startphi="0.0" deltaphi="6.283185307179586"/>
     <subtraction name="rockBoxTemp2">
