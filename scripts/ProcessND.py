@@ -168,7 +168,7 @@ if __name__ == "__main__":
     print >> sh, "setup genie_xsec   v2_12_10   -q DefaultPlusValenciaMEC"
     print >> sh, "setup genie_phyopt v2_12_10   -q dkcharmtau"
     print >> sh, "setup geant4 v4_10_3_p03e -q e17:prof"
-    print >> sh, "setup ND_Production v01_04_00 -q e17:prof"
+    print >> sh, "setup ND_Production v01_05_00 -q e17:prof"
     print >> sh, "setup jobsub_client"
     print >> sh, "setup cigetcert"
 
