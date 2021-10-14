@@ -25,7 +25,7 @@ def run_gen( sh, args ):
     print >> sh, "    -f flux_files/%s*,DUNEND \\" % flux
     if args.anti_fiducial:
         print "TEST ANTI FIDUCIAL:nd_hall_with_anti_fiducial_lar_tms_nosand.gdml"
-        print >> sh, "    -g ${ND_PRODUCTION_GDML}/nd_hall_with_anti_fiducial_lar_tms_nosand.gdml"
+        print >> sh, "    -g ${ND_PRODUCTION_GDML}/nd_hall_with_anti_fiducial_lar_tms_nosand.gdml \\"
     else:
         print >> sh, "    -g ${ND_PRODUCTION_GDML}/%s.gdml \\" % args.geometry
     print >> sh, "    -t %s \\" % args.topvol
