@@ -24,8 +24,8 @@ def run_gen( sh, args ):
     print >> sh, "gevgen_fnal \\"
     print >> sh, "    -f flux_files/%s*,DUNEND \\" % flux
     if args.anti_fiducial:
-        print "TEST ANTI FIDUCIAL:nd_hall_with_anti_fiducial_lar_tms_nosand.gdml"
-        print >> sh, "    -g ${ND_PRODUCTION_GDML}/nd_hall_with_anti_fiducial_lar_tms_nosand.gdml \\"
+        print "USING ANTI FIDUCIAL:anti_fiducial_%s.gdml" % args.geometry
+        print >> sh, "    -g ${ND_PRODUCTION_GDML}/anti_fiducial_%s.gdml \\" % args.geometry
     else:
         print >> sh, "    -g ${ND_PRODUCTION_GDML}/%s.gdml \\" % args.geometry
     print >> sh, "    -t %s \\" % args.topvol
@@ -135,14 +135,14 @@ if __name__ == "__main__":
     parser.add_option('--sam_name', help='Make a sam dataset with this name', default=None)
     parser.add_option('--dropbox_dir', help='dropbox directory', default="/pnfs/dune/scratch/dunepro/dropbox/neardet")
     parser.add_option('--data_stream', help='data_stream', default=None)
-    parser.add_option('--file_format', help='file format', default=None)
+    parser.add_option('--file_format', help='file format', default="root")
     parser.add_option('--application_family', help='application family', default=None)
     parser.add_option('--application_name', help='application name', default=None)
     parser.add_option('--application_version', help='application version', default=None)
     parser.add_option('--campaign', help='DUNE.campaign', default=None)
     parser.add_option('--requestid', help='DUNE.requestid', default=None)
 
-    parser.add_option('--anti_fiducial', help='anti fiducial test', default=False, action="store_true")
+    parser.add_option('--anti_fiducial', help='anti fiducial using : anti_fiducial_geometry.gdml', default=False, action="store_true")
 
     (args, dummy) = parser.parse_args()
 
@@ -214,7 +214,7 @@ if __name__ == "__main__":
         if args.sam_name is not None:
             # generate a unique file name with the timestamp
             if args.anti_fiducial:
-                copylines.append( "generate_sam_json ${GHEP_FILE} ${RUN} ${NSPILL} \"generated\" %s %1.2f %s %s %1.1f %d %s %s %s %s %s %s %s\n" % (args.sam_name, args.oa, args.topvol, "nd_hall_with_anti_fiducial_lar_tms_nosand", hc, fluxid, args.data_stream, args.file_format, args.application_family, args.application_name, args.application_version, args.campaign, args.requestid) )
+                copylines.append( "generate_sam_json ${GHEP_FILE} ${RUN} ${NSPILL} \"generated\" %s %1.2f %s %s %1.1f %d %s %s %s %s %s %s %s\n" % (args.sam_name, args.oa, args.topvol, "anti_fiducial_"+args.geometry, hc, fluxid, args.data_stream, args.file_format, args.application_family, args.application_name, args.application_version, args.campaign, args.requestid) )
             else:
                 copylines.append( "generate_sam_json ${GHEP_FILE} ${RUN} ${NSPILL} \"generated\" %s %1.2f %s %s %1.1f %d %s %s %s %s %s %s %s\n" % (args.sam_name, args.oa, args.topvol, args.geometry, hc, fluxid, args.data_stream, args.file_format, args.application_family, args.application_name, args.application_version, args.campaign, args.requestid) )
             copylines.append( "ifdh cp ${GHEP_FILE} %s/${GHEP_FILE}\n" % args.dropbox_dir )
