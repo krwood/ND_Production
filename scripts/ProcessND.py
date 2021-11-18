@@ -132,15 +132,15 @@ if __name__ == "__main__":
     parser.add_option('--fluxdir', help='Specify the top-level flux file directory', default="/cvmfs/dune.osgstorage.org/pnfs/fnal.gov/usr/dune/persistent/stash/Flux/g4lbne/v3r5p4/QGSP_BERT/OptimizedEngineeredNov2017")
     parser.add_option('--outdir', help='Top-level output directory', default="/pnfs/dune/persistent/users/%s/nd_production"%user)
     parser.add_option('--use_dk2nu', help='Use full dk2nu flux input (default is gsimple)', action="store_true", default=False)
-    parser.add_option('--sam_name', help='Make a sam dataset with this name', default=None)
+    parser.add_option('--sam_name', help='Make a sam dataset with this name', default="dune_nd_miniproduction_2021_v1")
     parser.add_option('--dropbox_dir', help='dropbox directory', default="/pnfs/dune/scratch/dunepro/dropbox/neardet")
-    parser.add_option('--data_stream', help='data_stream', default=None)
+    parser.add_option('--data_stream', help='data_stream', default="physics")
     parser.add_option('--file_format', help='file format', default="root")
-    parser.add_option('--application_family', help='application family', default=None)
-    parser.add_option('--application_name', help='application name', default=None)
-    parser.add_option('--application_version', help='application version', default=None)
-    parser.add_option('--campaign', help='DUNE.campaign', default=None)
-    parser.add_option('--requestid', help='DUNE.requestid', default=None)
+    parser.add_option('--application_family', help='application family', default="neardet")
+    parser.add_option('--application_name', help='application name', default="nd_production,genie,edep-sim")
+    parser.add_option('--application_version', help='application version', default="v01_04_00,v2_12_10,v3_0_1b")
+    parser.add_option('--campaign', help='DUNE.campaign', default="dune_nd_miniproduction_2021_v1")
+    parser.add_option('--requestid', help='DUNE.requestid', default="RITM1254894")
 
     parser.add_option('--anti_fiducial', help='anti fiducial using : anti_fiducial_geometry.gdml', default=False, action="store_true")
 
@@ -217,7 +217,7 @@ if __name__ == "__main__":
                 copylines.append( "generate_sam_json ${GHEP_FILE} ${RUN} ${NSPILL} \"generated\" %s %1.2f %s %s %1.1f %d %s %s %s %s %s %s %s\n" % (args.sam_name, args.oa, args.topvol, "anti_fiducial_"+args.geometry, hc, fluxid, args.data_stream, args.file_format, args.application_family, args.application_name, args.application_version, args.campaign, args.requestid) )
             else:
                 copylines.append( "generate_sam_json ${GHEP_FILE} ${RUN} ${NSPILL} \"generated\" %s %1.2f %s %s %1.1f %d %s %s %s %s %s %s %s\n" % (args.sam_name, args.oa, args.topvol, args.geometry, hc, fluxid, args.data_stream, args.file_format, args.application_family, args.application_name, args.application_version, args.campaign, args.requestid) )
-            copylines.append( "ifdh cp ${GHEP_FILE} %s/${GHEP_FILE}\n" % args.dropbox_dir )
+            #copylines.append( "ifdh cp ${GHEP_FILE} %s/${GHEP_FILE}\n" % args.dropbox_dir )
             copylines.append( "ifdh cp ${GHEP_FILE}.json %s/${GHEP_FILE}.json\n" % args.dropbox_dir )
         if args.persist == "all" or any(x in args.persist for x in ["gen", "genie", "generator"]):
             copylines.append( "ifdh_mkdir_p %s/genie/%s/%02.0fm/${RDIR}\n" % (args.outdir, args.horn, args.oa) )
@@ -230,8 +230,11 @@ if __name__ == "__main__":
         copylines.append( "mv %s.${RUN}.edep.root ${EDEP_FILE}\n" % mode )
 
         if args.sam_name is not None:
-            copylines.append( "generate_sam_json ${EDEP_FILE} ${RUN} ${NSPILL} \"simulated\" %s %1.2f %s %s %1.1f %d %s %s %s %s %s %s %s\n" % (args.sam_name, args.oa, args.topvol, args.geometry, hc, fluxid, args.data_stream, args.file_format, args.application_family, args.application_name, args.application_version, args.campaign, args.requestid) )
-            copylines.append( "ifdh cp ${EDEP_FILE} %s/${EDEP_FILE}\n" % args.dropbox_dir )
+            if args.anti_fiducial:
+                copylines.append( "generate_sam_json ${EDEP_FILE} ${RUN} ${NSPILL} \"simulated\" %s %1.2f %s %s %1.1f %d %s %s %s %s %s %s %s\n" % (args.sam_name, args.oa, args.topvol, "anti_fiducial_"+args.geometry, hc, fluxid, args.data_stream, args.file_format, args.application_family, args.application_name, args.application_version, args.campaign, args.requestid) )
+            else:
+                copylines.append( "generate_sam_json ${EDEP_FILE} ${RUN} ${NSPILL} \"simulated\" %s %1.2f %s %s %1.1f %d %s %s %s %s %s %s %s\n" % (args.sam_name, args.oa, args.topvol, args.geometry, hc, fluxid, args.data_stream, args.file_format, args.application_family, args.application_name, args.application_version, args.campaign, args.requestid) )
+            #copylines.append( "ifdh cp ${EDEP_FILE} %s/${EDEP_FILE}\n" % args.dropbox_dir )
             copylines.append( "ifdh cp ${EDEP_FILE}.json %s/${EDEP_FILE}.json\n" % args.dropbox_dir )
         if args.persist == "all" or any(x in args.persist for x in ["g4", "geant4", "edepsim", "edep-sim"]):
             copylines.append( "ifdh_mkdir_p %s/edep/%s/%02.0fm/${RDIR}\n" % (args.outdir, args.horn, args.oa) )
@@ -249,4 +252,3 @@ if __name__ == "__main__":
     if not args.test:
         print "Script processnd.sh created. Submit example:\n"
         print "jobsub_submit --group dune --role=Analysis -N 1000 --OS=SL7 --expected-lifetime=24h --memory=2000MB file://processnd.sh"
-
