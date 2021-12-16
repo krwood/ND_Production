@@ -1,30 +1,36 @@
 #include "TG4Event.h"
 
-void overlaySinglesIntoSpills() {
+// Simple root macro meant to take in an output file from edep-sim
+// containing single neutrino interactions (from LBNF flux) in the
+// event tree and overlay these events into full spills.
+//
+// The output will have two changes with respect to the input:
+//
+//   (1) The EventId is now non-unique for each tree entry
+//       (= individual neutrino interaction) and indicates which
+//       spill the event should be assigned to.
+//   (2) The timing information is edited to impose the timing
+//       microstructure of the lbnf beamline.
+
+void overlaySinglesIntoSpills(std::string inFileName, double inFilePOT = 1.0E16, std::string outFileName = "spillFile.root", double spillPOT = 7.5E13) {
 
   // get input file 
-  std::string inFileName = "/pnfs/dune/tape_backed/dunepro/neardet/simulated/2021/mc/physics/dune_nd_miniproduction_2021_v1/00/00/00/00/neutrino.0_1635125340.edep.root";
-  //TFile* inFile = new TFile(inFileName.c_str(),"READ");
   TChain* edep_evts = new TChain("EDepSimEvents");
   edep_evts->Add(inFileName.c_str());
 
   // make output file
-  std::string outFileName = "spillFile.root"; 
   TFile* outFile = new TFile(outFileName.c_str(),"RECREATE");
   TTree* new_tree = edep_evts->CloneTree(0);
 
   // holds lbnf beam timing structure
-  TFile* beam_t_file = new TFile("/dune/app/users/kwood/dune-nd/software/ana_edepsim_ndlar/output/lbnf_beam_microstructure.root","READ");
+  TFile* beam_t_file = new TFile("lbnf_beam_microstructure.root","READ");
   TH1D* beam_t = (TH1D*) beam_t_file->Get("h_lbnf_spillT");
 
   unsigned int N_evts = edep_evts->GetEntries();
-  double spill_pot, chain_pot;
-  spill_pot = 7.5E13;
-  chain_pot = 1.0E16;
-  double evts_per_spill = ((double)N_evts)/(chain_pot/spill_pot);
+  double evts_per_spill = ((double)N_evts)/(inFilePOT/spillPOT);
 
   std::cout << "File: " << inFileName << std::endl;  
-  std::cout << "    Number of spills: "<< chain_pot/spill_pot << std::endl;  
+  std::cout << "    Number of spills: "<< inFilePOT/spillPOT << std::endl;  
   std::cout << "    Events per spill: "<< evts_per_spill << std::endl;  
 
   TG4Event* edep_evt = NULL;
@@ -34,7 +40,7 @@ void overlaySinglesIntoSpills() {
 
   // Poisson fluctuation of average number of events per spill in this file
   int Nevts_this_spill = gRandom->Poisson(evts_per_spill);
-  int spillN=0;
+  int spillN = 0;
   int evt_it = 0;
 
   //for(unsigned int evt_it = 0; evt_it<N_evts; evt_it++) {
@@ -82,7 +88,7 @@ void overlaySinglesIntoSpills() {
       N_left--;
     }
 
-    // move counters appropriately for next spill
+    // for next spill
     Nevts_this_spill = gRandom->Poisson(evts_per_spill); 
 
   } // spill loop
